@@ -4,6 +4,7 @@ import '../widgets/chart_widgets.dart';
 import '../widgets/dashboard_insights.dart';
 import '../../../../core/widgets/responsive_grid.dart';
 import '../../../../core/widgets/animated_counter.dart';
+import '../../../../core/widgets/data_mode_indicator.dart';
 import '../../data/demo_dashboard_data.dart';
 
 class DemoDashboardScreen extends StatefulWidget {
@@ -85,6 +86,12 @@ class _DemoDashboardScreenState extends State<DemoDashboardScreen>
         ),
       ),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.info_outline, color: Colors.white),
+          onPressed: () {
+            DataModeDialog.show(context);
+          },
+        ),
         IconButton(
           icon: const Icon(Icons.refresh, color: Colors.white),
           onPressed: () {

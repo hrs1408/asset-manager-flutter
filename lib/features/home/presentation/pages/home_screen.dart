@@ -10,6 +10,8 @@ import '../../../expenses/presentation/pages/category_management_screen.dart';
 import '../../../expenses/presentation/pages/transaction_list_screen.dart';
 import '../../../expenses/presentation/bloc/transaction_bloc.dart';
 import '../../../backup/presentation/pages/backup_screen.dart';
+import '../../../dashboard/presentation/pages/production_dashboard_screen.dart';
+import '../../../dashboard/presentation/bloc/dashboard_bloc.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const DashboardTab(),
+    const DashboardTabWrapper(),
     const AssetListScreenWrapper(),
     const TransactionListScreenWrapper(),
     const CategoryManagementScreen(),
@@ -73,35 +75,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class DashboardTab extends StatelessWidget {
-  const DashboardTab({super.key});
+class DashboardTabWrapper extends StatelessWidget {
+  const DashboardTabWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tổng quan'),
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.dashboard,
-              size: 64,
-              color: Colors.grey,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Dashboard sẽ được triển khai sau',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return BlocProvider(
+      create: (context) => sl<DashboardBloc>(),
+      child: const ProductionDashboardScreen(),
     );
   }
 }
