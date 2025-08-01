@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only access their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // User profile data
+      match /profile/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // User assets - only the owner can access
+      match /assets/{assetId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Validate asset data structure
+        allow create: if request.auth != null 
+          && request.auth.uid == userId
+          && validateAssetData(request.resource.data);
+          
+        allow update: if request.auth != null 
+          && request.auth.uid == userId
+          && validateAssetData(request.resource.data);
+      }
+      
+      // User expense categories - only the owner can access
+      match /categories/{categoryId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Validate category data structure
+        allow create: if request.auth != null 
+          && request.auth.uid == userId
+          && validateCategoryData(request.resource.data);
+          
+        allow update: if request.auth != null 
+          && request.auth.uid == userId
+          && validateCategoryData(request.resource.data);
+      }
+      
+      // User transactions - only the owner can access
+      match /transactions/{transactionId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Validate transaction data structure
+        allow create: if request.auth != null 
+          && request.auth.uid == userId
+          && validateTransactionData(request.resource.data);
+          
+        allow update: if request.auth != null 
+          && request.auth.uid == userId
+          && validateTransactionData(request.resource.data);
+      }
+    }
+    
+    // Validation functions
+    function validateAssetData(data) {
+      return data.keys().hasAll(['name', 'type', 'balance', 'createdAt', 'updatedAt'])
+        && data.name is string
+        && data.name.size() > 0
+        && data.type is string
+        && data.type in ['paymentAccount', 'savingsAccount', 'gold', 'loan', 'realEstate', 'other']
+        && data.balance is number
+        && data.balance >= 0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+    
+    function validateCategoryData(data) {
+      return data.keys().hasAll(['name', 'description', 'icon'])
+        && data.name is string
+        && data.name.size() > 0
+        && data.description is string
+        && data.icon is string
+        && ('isDefault' in data ? data.isDefault is bool : true);
+    }
+    
+    function validateTransactionData(data) {
+      return data.keys().hasAll(['assetId', 'categoryId', 'amount', 'description', 'date', 'createdAt'])
+        && data.assetId is string
+        && data.assetId.size() > 0
+        && data.categoryId is string
+        && data.categoryId.size() > 0
+        && data.amount is number
+        && data.amount > 0
+        && data.description is string
+        && data.date is timestamp
+        && data.createdAt is timestamp;
+    }
+  }
+}

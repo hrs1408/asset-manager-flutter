@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "102822327889",
+    "project_id": "qlct-22c76",
+    "storage_bucket": "qlct-22c76.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:102822327889:android:b3fbde6aa4dd4cb243ea70",
+        "android_client_info": {
+          "package_name": "hieunph.me"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "102822327889-c67nu3prb2so250cn3qv3qt5cijs98ju.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-we_bjjCBnwC95l9r-HEvGG-WNuOR6D8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "102822327889-c67nu3prb2so250cn3qv3qt5cijs98ju.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "102822327889-up1rpts6ule6bmrmp0l46hb1mjqmij0i.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "hieunph.me"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
