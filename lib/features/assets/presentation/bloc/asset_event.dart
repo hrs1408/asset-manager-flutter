@@ -79,3 +79,50 @@ class AssetRefreshRequested extends AssetEvent {
   @override
   List<Object> get props => [userId];
 }
+
+class AssetDepositRequested extends AssetEvent {
+  final String assetId;
+  final double amount;
+
+  const AssetDepositRequested({
+    required this.assetId,
+    required this.amount,
+  });
+
+  @override
+  List<Object> get props => [assetId, amount];
+}
+
+class AssetDepositWithDetailsRequested extends AssetEvent {
+  final String assetId;
+  final double amount;
+  final String depositSource;
+  final String? notes;
+
+  const AssetDepositWithDetailsRequested({
+    required this.assetId,
+    required this.amount,
+    required this.depositSource,
+    this.notes,
+  });
+
+  @override
+  List<Object?> get props => [assetId, amount, depositSource, notes];
+}
+
+class AssetTransferRequested extends AssetEvent {
+  final String fromAssetId;
+  final String toAssetId;
+  final double amount;
+  final String? notes;
+
+  const AssetTransferRequested({
+    required this.fromAssetId,
+    required this.toAssetId,
+    required this.amount,
+    this.notes,
+  });
+
+  @override
+  List<Object?> get props => [fromAssetId, toAssetId, amount, notes];
+}

@@ -598,8 +598,9 @@ _buildWelcomeHeader() {
         ],
       ),
     );
-  }  Widge
-t _buildChartsSection(DashboardLoaded state) {
+  }
+
+  Widget _buildChartsSection(DashboardLoaded state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

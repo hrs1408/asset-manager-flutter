@@ -21,6 +21,25 @@ abstract class AssetRepository {
   /// Cập nhật số dư tài sản
   Future<Either<Failure, Asset>> updateAssetBalance(String assetId, double newBalance);
 
+  /// Nộp tiền vào tài sản
+  Future<Either<Failure, Asset>> depositToAsset(String assetId, double amount);
+
+  /// Nộp tiền vào tài sản với nguồn và ghi chú
+  Future<Either<Failure, Asset>> depositToAssetWithDetails({
+    required String assetId,
+    required double amount,
+    required String depositSource,
+    String? notes,
+  });
+
+  /// Chuyển tiền giữa các tài sản
+  Future<Either<Failure, Map<String, Asset>>> transferBetweenAssets({
+    required String fromAssetId,
+    required String toAssetId,
+    required double amount,
+    String? notes,
+  });
+
   /// Lấy tổng giá trị tài sản theo loại
   Future<Either<Failure, Map<String, double>>> getAssetSummaryByType(String userId);
 }

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/utils/format_utils.dart';
 import '../../domain/entities/asset.dart';
 import '../../domain/entities/asset_type.dart';
+import '../bloc/asset_bloc.dart';
+import '../bloc/asset_state.dart';
+import 'deposit_dialog.dart';
+import 'transfer_dialog.dart';
 
 class AssetCard extends StatelessWidget {
   final Asset asset;
@@ -16,8 +21,7 @@ class AssetCard extends StatelessWidget {
   });
 
   String _formatCurrency(double amount) {
-    final formatter = NumberFormat('#,###', 'vi_VN');
-    return '${formatter.format(amount)} VNĐ';
+    return FormatUtils.formatCurrency(amount);
   }
 
   IconData _getAssetIcon(AssetType type) {
@@ -51,6 +55,33 @@ class AssetCard extends StatelessWidget {
         return Colors.brown;
       case AssetType.other:
         return Colors.grey;
+    }
+  }
+
+  void _showQuickDepositDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => DepositDialog(asset: asset),
+    );
+  }
+
+  void _showQuickTransferDialog(BuildContext context) {
+    final currentState = context.read<AssetBloc>().state;
+    if (currentState is AssetLoaded) {
+      showDialog(
+        context: context,
+        builder: (context) => TransferDialog(
+          fromAsset: asset,
+          availableAssets: currentState.assets,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không thể tải danh sách tài sản'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -122,28 +153,51 @@ class AssetCard extends StatelessWidget {
               ),
               
               // Actions
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'delete') {
-                    onDelete();
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Xóa'),
-                      ],
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Quick deposit button
+                  IconButton(
+                    onPressed: () => _showQuickDepositDialog(context),
+                    icon: const Icon(
+                      Icons.add_circle_outline,
+                      color: Colors.green,
+                    ),
+                    tooltip: 'Nộp tiền',
+                  ),
+                  // Quick transfer button
+                  IconButton(
+                    onPressed: () => _showQuickTransferDialog(context),
+                    icon: const Icon(
+                      Icons.swap_horiz,
+                      color: Colors.blue,
+                    ),
+                    tooltip: 'Chuyển tiền',
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'delete') {
+                        onDelete();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Xóa'),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: const Icon(
+                      Icons.more_vert,
+                      color: Colors.grey,
                     ),
                   ),
                 ],
-                child: const Icon(
-                  Icons.more_vert,
-                  color: Colors.grey,
-                ),
               ),
             ],
           ),

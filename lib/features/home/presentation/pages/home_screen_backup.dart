@@ -51,99 +51,6 @@ class _HomeScreenState extends State<HomeScreen> {
           : _buildTabletBottomNavigation(),
     );
   }
-
-  Widget _buildMobileBottomNavigation() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildMobileNavItem(0, Icons.dashboard, 'Tổng quan'),
-              _buildMobileNavItem(1, Icons.account_balance_wallet, 'Tài sản'),
-              _buildMobileNavItem(2, Icons.receipt_long, 'Giao dịch'),
-              _buildMobileNavItem(3, Icons.category, 'Danh mục'),
-              _buildMobileNavItem(4, Icons.person, 'Cá nhân'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabletBottomNavigation() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      currentIndex: _selectedIndex,
-      onTap: _onItemTapped,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard),
-          label: 'Tổng quan',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.account_balance_wallet),
-          label: 'Tài sản',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.receipt_long),
-          label: 'Giao dịch',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.category),
-          label: 'Danh mục',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Cá nhân',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMobileNavItem(int index, IconData icon, String label) {
-    final isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Theme.of(context).primaryColor : Colors.grey,
-              size: 20,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Theme.of(context).primaryColor : Colors.grey,
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class DashboardTabWrapper extends StatelessWidget {
@@ -312,6 +219,228 @@ class ProfileTab extends StatelessWidget {
         subtitle: Text(subtitle),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: onTap,
+      ),
+    );
+  }
+}
+
+class ProfileTab extends StatelessWidget {
+  const ProfileTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Cá nhân'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Đăng xuất'),
+                  content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Hủy'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        context.read<AuthBloc>().add(const AuthSignOutRequested());
+                      },
+                      child: const Text('Đăng xuất'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            const CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.blue,
+              child: Icon(
+                Icons.person,
+                size: 50,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            BlocBuilder<AuthBloc, AuthState>(
+              builder: (context, state) {
+                if (state is AuthAuthenticated) {
+                  return Text(
+                    state.user.email,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                }
+                return const Text('Đang tải...');
+              },
+            ),
+            const SizedBox(height: 40),
+            _buildMenuCard(
+              context,
+              icon: Icons.backup,
+              title: 'Sao lưu & Bảo mật',
+              subtitle: 'Xuất dữ liệu và cài đặt bảo mật',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BackupScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildMenuCard(
+              context,
+              icon: Icons.info_outline,
+              title: 'Thông tin ứng dụng',
+              subtitle: 'Phiên bản 1.0.0',
+              onTap: () {
+                showAboutDialog(
+                  context: context,
+                  applicationName: 'Quản lý Tài sản',
+                  applicationVersion: '1.0.0',
+                  applicationIcon: const Icon(Icons.account_balance_wallet),
+                  children: [
+                    const Text('Ứng dụng quản lý tài sản cá nhân'),
+                    const Text('Phát triển bằng Flutter & Firebase'),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue.shade50,
+          child: Icon(icon, color: Colors.blue),
+        ),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+extension on _HomeScreenState {
+  Widget _buildMobileBottomNavigation() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildMobileNavItem(0, Icons.dashboard, 'Tổng quan'),
+              _buildMobileNavItem(1, Icons.account_balance_wallet, 'Tài sản'),
+              _buildMobileNavItem(2, Icons.receipt_long, 'Giao dịch'),
+              _buildMobileNavItem(3, Icons.category, 'Danh mục'),
+              _buildMobileNavItem(4, Icons.person, 'Cá nhân'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabletBottomNavigation() {
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      currentIndex: _selectedIndex,
+      onTap: _onItemTapped,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.dashboard),
+          label: 'Tổng quan',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.account_balance_wallet),
+          label: 'Tài sản',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.receipt_long),
+          label: 'Giao dịch',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.category),
+          label: 'Danh mục',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'Cá nhân',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileNavItem(int index, IconData icon, String label) {
+    final isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Theme.of(context).primaryColor : Colors.grey,
+              size: 20,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Theme.of(context).primaryColor : Colors.grey,
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
+import '../../../../core/utils/format_utils.dart';
 import '../../domain/entities/asset.dart';
 import '../../domain/entities/asset_type.dart';
 import '../bloc/asset_bloc.dart';
@@ -30,13 +30,11 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   }
 
   String _formatCurrency(double amount) {
-    final formatter = NumberFormat('#,###', 'vi_VN');
-    return '${formatter.format(amount)} VNĐ';
+    return FormatUtils.formatCurrency(amount);
   }
 
   String _formatDate(DateTime date) {
-    final formatter = DateFormat('dd/MM/yyyy HH:mm', 'vi_VN');
-    return formatter.format(date);
+    return FormatUtils.formatDate(date);
   }
 
   void _navigateToEdit(Asset asset) {

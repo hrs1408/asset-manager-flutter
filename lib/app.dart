@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/di/service_locator.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
@@ -8,6 +9,7 @@ import 'features/auth/presentation/bloc/auth_state.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
 import 'features/assets/presentation/bloc/asset_bloc.dart';
 import 'features/expenses/presentation/bloc/category_bloc.dart';
+import 'features/expenses/presentation/bloc/transaction_bloc.dart';
 import 'core/constants/app_constants.dart';
 import 'features/home/presentation/pages/home_screen.dart';
 
@@ -27,9 +29,22 @@ class MyApp extends StatelessWidget {
         BlocProvider<CategoryBloc>(
           create: (context) => sl<CategoryBloc>(),
         ),
+        BlocProvider<TransactionBloc>(
+          create: (context) => sl<TransactionBloc>(),
+        ),
       ],
       child: MaterialApp(
         title: AppConstants.appName,
+        locale: const Locale('vi', 'VN'),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('vi', 'VN'),
+          Locale('en', 'US'),
+        ],
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,

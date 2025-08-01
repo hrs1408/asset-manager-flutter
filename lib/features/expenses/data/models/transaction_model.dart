@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/transaction.dart' as domain;
+import '../../domain/entities/transaction_type.dart';
+import '../../domain/entities/deposit_source.dart';
 
 class TransactionModel extends domain.Transaction {
   const TransactionModel({
@@ -11,6 +13,10 @@ class TransactionModel extends domain.Transaction {
     required super.description,
     required super.date,
     required super.createdAt,
+    super.type = TransactionType.expense,
+    super.depositSource,
+    super.toAssetId,
+    super.notes,
   });
 
   /// Tạo TransactionModel từ Transaction entity
@@ -24,6 +30,10 @@ class TransactionModel extends domain.Transaction {
       description: transaction.description,
       date: transaction.date,
       createdAt: transaction.createdAt,
+      type: transaction.type,
+      depositSource: transaction.depositSource,
+      toAssetId: transaction.toAssetId,
+      notes: transaction.notes,
     );
   }
 
@@ -40,6 +50,12 @@ class TransactionModel extends domain.Transaction {
       description: data['description'] ?? '',
       date: (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      type: TransactionTypeExtension.fromString(data['type'] ?? 'expense'),
+      depositSource: data['depositSource'] != null 
+          ? DepositSourceExtension.fromString(data['depositSource'])
+          : null,
+      toAssetId: data['toAssetId'],
+      notes: data['notes'],
     );
   }
 
@@ -58,12 +74,18 @@ class TransactionModel extends domain.Transaction {
       createdAt: map['createdAt'] is Timestamp 
           ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      type: TransactionTypeExtension.fromString(map['type'] ?? 'expense'),
+      depositSource: map['depositSource'] != null 
+          ? DepositSourceExtension.fromString(map['depositSource'])
+          : null,
+      toAssetId: map['toAssetId'],
+      notes: map['notes'],
     );
   }
 
   /// Chuyển đổi thành Map để lưu vào Firestore
   Map<String, dynamic> toFirestore() {
-    return {
+    final data = {
       'id': id,
       'userId': userId,
       'assetId': assetId,
@@ -72,23 +94,49 @@ class TransactionModel extends domain.Transaction {
       'description': description,
       'date': Timestamp.fromDate(date),
       'createdAt': FieldValue.serverTimestamp(),
+      'type': type.value,
     };
+
+    if (depositSource != null) {
+      data['depositSource'] = depositSource!.value;
+    }
+    if (toAssetId != null) {
+      data['toAssetId'] = toAssetId!;
+    }
+    if (notes != null) {
+      data['notes'] = notes!;
+    }
+
+    return data;
   }
 
   /// Chuyển đổi thành Map để update Firestore (không có createdAt)
   Map<String, dynamic> toFirestoreUpdate() {
-    return {
+    final data = {
       'assetId': assetId,
       'categoryId': categoryId,
       'amount': amount,
       'description': description,
       'date': Timestamp.fromDate(date),
+      'type': type.value,
     };
+
+    if (depositSource != null) {
+      data['depositSource'] = depositSource!.value;
+    }
+    if (toAssetId != null) {
+      data['toAssetId'] = toAssetId!;
+    }
+    if (notes != null) {
+      data['notes'] = notes!;
+    }
+
+    return data;
   }
 
   /// Chuyển đổi thành Map
   Map<String, dynamic> toMap() {
-    return {
+    final data = {
       'id': id,
       'userId': userId,
       'assetId': assetId,
@@ -97,7 +145,20 @@ class TransactionModel extends domain.Transaction {
       'description': description,
       'date': date.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
+      'type': type.value,
     };
+
+    if (depositSource != null) {
+      data['depositSource'] = depositSource!.value;
+    }
+    if (toAssetId != null) {
+      data['toAssetId'] = toAssetId!;
+    }
+    if (notes != null) {
+      data['notes'] = notes!;
+    }
+
+    return data;
   }
 
   /// Chuyển đổi thành JSON
@@ -107,6 +168,7 @@ class TransactionModel extends domain.Transaction {
   factory TransactionModel.fromJson(Map<String, dynamic> json) => TransactionModel.fromMap(json);
 
   /// Tạo copy với các thuộc tính mới
+  @override
   TransactionModel copyWith({
     String? id,
     String? userId,
@@ -116,6 +178,10 @@ class TransactionModel extends domain.Transaction {
     String? description,
     DateTime? date,
     DateTime? createdAt,
+    TransactionType? type,
+    DepositSource? depositSource,
+    String? toAssetId,
+    String? notes,
   }) {
     return TransactionModel(
       id: id ?? this.id,
@@ -126,6 +192,10 @@ class TransactionModel extends domain.Transaction {
       description: description ?? this.description,
       date: date ?? this.date,
       createdAt: createdAt ?? this.createdAt,
+      type: type ?? this.type,
+      depositSource: depositSource ?? this.depositSource,
+      toAssetId: toAssetId ?? this.toAssetId,
+      notes: notes ?? this.notes,
     );
   }
 
@@ -140,6 +210,10 @@ class TransactionModel extends domain.Transaction {
       description: description,
       date: date,
       createdAt: createdAt,
+      type: type,
+      depositSource: depositSource,
+      toAssetId: toAssetId,
+      notes: notes,
     );
   }
 }

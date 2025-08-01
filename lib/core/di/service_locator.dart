@@ -114,6 +114,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetAssetByIdUseCase(sl()));
   sl.registerLazySingleton(() => UpdateAssetUseCase(sl()));
   sl.registerLazySingleton(() => DeleteAssetUseCase(sl()));
+  sl.registerLazySingleton(() => DepositToAssetUsecase(sl()));
+  sl.registerLazySingleton(() => DepositToAssetWithDetailsUsecase(sl()));
+  sl.registerLazySingleton(() => TransferBetweenAssetsUsecase(sl()));
 
   sl.registerFactory(
     () => AssetBloc(
@@ -122,6 +125,9 @@ Future<void> init() async {
       getAssetByIdUseCase: sl(),
       updateAssetUseCase: sl(),
       deleteAssetUseCase: sl(),
+      depositToAssetUsecase: sl(),
+      depositToAssetWithDetailsUsecase: sl(),
+      transferBetweenAssetsUsecase: sl(),
     ),
   );
 

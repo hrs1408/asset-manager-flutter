@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'transaction_type.dart';
+import 'deposit_source.dart';
 
 class Transaction extends Equatable {
   final String id;
@@ -9,6 +11,10 @@ class Transaction extends Equatable {
   final String description;
   final DateTime date;
   final DateTime createdAt;
+  final TransactionType type;
+  final DepositSource? depositSource; // Chỉ có khi type = deposit
+  final String? toAssetId; // Chỉ có khi type = transfer
+  final String? notes; // Ghi chú thêm
 
   const Transaction({
     required this.id,
@@ -19,6 +25,10 @@ class Transaction extends Equatable {
     required this.description,
     required this.date,
     required this.createdAt,
+    this.type = TransactionType.expense,
+    this.depositSource,
+    this.toAssetId,
+    this.notes,
   });
 
   Transaction copyWith({
@@ -30,6 +40,10 @@ class Transaction extends Equatable {
     String? description,
     DateTime? date,
     DateTime? createdAt,
+    TransactionType? type,
+    DepositSource? depositSource,
+    String? toAssetId,
+    String? notes,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -40,6 +54,10 @@ class Transaction extends Equatable {
       description: description ?? this.description,
       date: date ?? this.date,
       createdAt: createdAt ?? this.createdAt,
+      type: type ?? this.type,
+      depositSource: depositSource ?? this.depositSource,
+      toAssetId: toAssetId ?? this.toAssetId,
+      notes: notes ?? this.notes,
     );
   }
 
@@ -53,5 +71,9 @@ class Transaction extends Equatable {
         description,
         date,
         createdAt,
+        type,
+        depositSource,
+        toAssetId,
+        notes,
       ];
 }

@@ -176,6 +176,149 @@ class AssetRepositoryImpl implements AssetRepository {
   }
 
   @override
+  Future<Either<Failure, Asset>> depositToAsset(
+    String assetId,
+    double amount,
+  ) async {
+    try {
+      if (amount <= 0) {
+        return const Left(ValidationFailure('Số tiền nộp phải lớn hơn 0'));
+      }
+
+      // Lấy thông tin tài sản hiện tại
+      final assetResult = await getAssetById(assetId);
+      if (assetResult.isLeft()) {
+        return assetResult;
+      }
+
+      final currentAsset = assetResult.getOrElse(() => throw Exception());
+      final newBalance = currentAsset.balance + amount;
+
+      // Cập nhật số dư mới
+      return await updateAssetBalance(assetId, newBalance);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Asset>> depositToAssetWithDetails({
+    required String assetId,
+    required double amount,
+    required String depositSource,
+    String? notes,
+  }) async {
+    try {
+      if (amount <= 0) {
+        return const Left(ValidationFailure('Số tiền nộp phải lớn hơn 0'));
+      }
+
+      // Lấy thông tin tài sản hiện tại
+      final assetResult = await getAssetById(assetId);
+      if (assetResult.isLeft()) {
+        return assetResult;
+      }
+
+      final currentAsset = assetResult.getOrElse(() => throw Exception());
+      final newBalance = currentAsset.balance + amount;
+
+      // Tạo transaction record cho việc nộp tiền
+      await _createDepositTransaction(
+        assetId: assetId,
+        amount: amount,
+        depositSource: depositSource,
+        notes: notes,
+      );
+
+      // Cập nhật số dư mới
+      return await updateAssetBalance(assetId, newBalance);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, Asset>>> transferBetweenAssets({
+    required String fromAssetId,
+    required String toAssetId,
+    required double amount,
+    String? notes,
+  }) async {
+    try {
+      if (amount <= 0) {
+        return const Left(ValidationFailure('Số tiền chuyển phải lớn hơn 0'));
+      }
+
+      if (fromAssetId == toAssetId) {
+        return const Left(ValidationFailure('Không thể chuyển tiền cho cùng một tài sản'));
+      }
+
+      // Lấy thông tin cả hai tài sản
+      final fromAssetResult = await getAssetById(fromAssetId);
+      final toAssetResult = await getAssetById(toAssetId);
+
+      if (fromAssetResult.isLeft()) {
+        return Left(fromAssetResult.fold((l) => l, (r) => throw Exception()));
+      }
+      if (toAssetResult.isLeft()) {
+        return Left(toAssetResult.fold((l) => l, (r) => throw Exception()));
+      }
+
+      final fromAsset = fromAssetResult.getOrElse(() => throw Exception());
+      final toAsset = toAssetResult.getOrElse(() => throw Exception());
+
+      // Kiểm tra số dư đủ để chuyển
+      if (fromAsset.balance < amount) {
+        return const Left(ValidationFailure('Số dư không đủ để thực hiện chuyển tiền'));
+      }
+
+      // Tạo transaction record cho việc chuyển tiền
+      await _createTransferTransaction(
+        fromAssetId: fromAssetId,
+        toAssetId: toAssetId,
+        amount: amount,
+        notes: notes,
+      );
+
+      // Cập nhật số dư cho cả hai tài sản
+      final newFromBalance = fromAsset.balance - amount;
+      final newToBalance = toAsset.balance + amount;
+
+      final updatedFromAssetResult = await updateAssetBalance(fromAssetId, newFromBalance);
+      final updatedToAssetResult = await updateAssetBalance(toAssetId, newToBalance);
+
+      if (updatedFromAssetResult.isLeft()) {
+        return Left(updatedFromAssetResult.fold((l) => l, (r) => throw Exception()));
+      }
+      if (updatedToAssetResult.isLeft()) {
+        return Left(updatedToAssetResult.fold((l) => l, (r) => throw Exception()));
+      }
+
+      final updatedFromAsset = updatedFromAssetResult.getOrElse(() => throw Exception());
+      final updatedToAsset = updatedToAssetResult.getOrElse(() => throw Exception());
+
+      return Right({
+        'from': updatedFromAsset,
+        'to': updatedToAsset,
+      });
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
+
+  @override
   Future<Either<Failure, Map<String, double>>> getAssetSummaryByType(
     String userId,
   ) async {
@@ -223,5 +366,79 @@ class AssetRepositoryImpl implements AssetRepository {
       // Nếu có lỗi, giả sử asset đang được sử dụng để an toàn
       return true;
     }
+  }
+
+  /// Tạo transaction record cho việc nộp tiền
+  Future<void> _createDepositTransaction({
+    required String assetId,
+    required double amount,
+    required String depositSource,
+    String? notes,
+  }) async {
+    final transactionData = {
+      'userId': _firestoreService.currentUserId,
+      'assetId': assetId,
+      'categoryId': 'deposit', // Special category for deposits
+      'amount': amount,
+      'description': 'Nộp tiền từ $depositSource',
+      'date': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'type': 'deposit',
+      'depositSource': depositSource,
+      'notes': notes,
+    };
+
+    await _firestoreService.createDocument(
+      AppConstants.transactionsCollection,
+      transactionData,
+    );
+  }
+
+  /// Tạo transaction record cho việc chuyển tiền
+  Future<void> _createTransferTransaction({
+    required String fromAssetId,
+    required String toAssetId,
+    required double amount,
+    String? notes,
+  }) async {
+    // Tạo transaction cho tài sản nguồn (trừ tiền)
+    final fromTransactionData = {
+      'userId': _firestoreService.currentUserId,
+      'assetId': fromAssetId,
+      'categoryId': 'transfer', // Special category for transfers
+      'amount': -amount, // Negative amount for outgoing transfer
+      'description': 'Chuyển tiền đi',
+      'date': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'type': 'transfer',
+      'toAssetId': toAssetId,
+      'notes': notes,
+    };
+
+    // Tạo transaction cho tài sản đích (cộng tiền)
+    final toTransactionData = {
+      'userId': _firestoreService.currentUserId,
+      'assetId': toAssetId,
+      'categoryId': 'transfer', // Special category for transfers
+      'amount': amount, // Positive amount for incoming transfer
+      'description': 'Nhận tiền chuyển',
+      'date': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'type': 'transfer',
+      'toAssetId': fromAssetId, // Reference to source asset
+      'notes': notes,
+    };
+
+    // Tạo cả hai transaction
+    await Future.wait([
+      _firestoreService.createDocument(
+        AppConstants.transactionsCollection,
+        fromTransactionData,
+      ),
+      _firestoreService.createDocument(
+        AppConstants.transactionsCollection,
+        toTransactionData,
+      ),
+    ]);
   }
 }

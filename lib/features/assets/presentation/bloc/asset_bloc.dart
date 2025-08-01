@@ -10,6 +10,9 @@ class AssetBloc extends Bloc<AssetEvent, AssetState> {
   final UpdateAssetUseCase updateAssetUseCase;
   final DeleteAssetUseCase deleteAssetUseCase;
   final GetAssetByIdUseCase getAssetByIdUseCase;
+  final DepositToAssetUsecase depositToAssetUsecase;
+  final DepositToAssetWithDetailsUsecase depositToAssetWithDetailsUsecase;
+  final TransferBetweenAssetsUsecase transferBetweenAssetsUsecase;
 
   AssetBloc({
     required this.getAssetsUseCase,
@@ -17,6 +20,9 @@ class AssetBloc extends Bloc<AssetEvent, AssetState> {
     required this.updateAssetUseCase,
     required this.deleteAssetUseCase,
     required this.getAssetByIdUseCase,
+    required this.depositToAssetUsecase,
+    required this.depositToAssetWithDetailsUsecase,
+    required this.transferBetweenAssetsUsecase,
   }) : super(const AssetInitial()) {
     on<AssetLoadRequested>(_onAssetLoadRequested);
     on<AssetCreateRequested>(_onAssetCreateRequested);
@@ -24,6 +30,9 @@ class AssetBloc extends Bloc<AssetEvent, AssetState> {
     on<AssetDeleteRequested>(_onAssetDeleteRequested);
     on<AssetGetByIdRequested>(_onAssetGetByIdRequested);
     on<AssetRefreshRequested>(_onAssetRefreshRequested);
+    on<AssetDepositRequested>(_onAssetDepositRequested);
+    on<AssetDepositWithDetailsRequested>(_onAssetDepositWithDetailsRequested);
+    on<AssetTransferRequested>(_onAssetTransferRequested);
   }
 
   Future<void> _onAssetLoadRequested(
@@ -189,6 +198,121 @@ class AssetBloc extends Bloc<AssetEvent, AssetState> {
         } else {
           emit(AssetLoaded(assets: assets));
         }
+      },
+    );
+  }
+
+  Future<void> _onAssetDepositRequested(
+    AssetDepositRequested event,
+    Emitter<AssetState> emit,
+  ) async {
+    final currentState = state;
+    final currentAssets = _getCurrentAssets(currentState);
+    
+    emit(AssetOperationLoading(
+      assets: currentAssets,
+      operation: 'Đang nộp tiền vào tài sản...',
+    ));
+
+    final result = await depositToAssetUsecase(
+      DepositToAssetParams(
+        assetId: event.assetId,
+        amount: event.amount,
+      ),
+    );
+
+    result.fold(
+      (failure) => emit(AssetError(message: failure.message)),
+      (updatedAsset) {
+        final updatedAssets = currentAssets
+            .map((asset) => asset.id == updatedAsset.id ? updatedAsset : asset)
+            .toList();
+        emit(AssetOperationSuccess(
+          assets: updatedAssets,
+          message: 'Nộp tiền thành công',
+        ));
+        // Automatically transition to loaded state
+        emit(AssetLoaded(assets: updatedAssets));
+      },
+    );
+  }
+
+  Future<void> _onAssetDepositWithDetailsRequested(
+    AssetDepositWithDetailsRequested event,
+    Emitter<AssetState> emit,
+  ) async {
+    final currentState = state;
+    final currentAssets = _getCurrentAssets(currentState);
+    
+    emit(AssetOperationLoading(
+      assets: currentAssets,
+      operation: 'Đang nộp tiền vào tài sản...',
+    ));
+
+    final result = await depositToAssetWithDetailsUsecase(
+      DepositToAssetWithDetailsParams(
+        assetId: event.assetId,
+        amount: event.amount,
+        depositSource: event.depositSource,
+        notes: event.notes,
+      ),
+    );
+
+    result.fold(
+      (failure) => emit(AssetError(message: failure.message)),
+      (updatedAsset) {
+        final updatedAssets = currentAssets
+            .map((asset) => asset.id == updatedAsset.id ? updatedAsset : asset)
+            .toList();
+        emit(AssetOperationSuccess(
+          assets: updatedAssets,
+          message: 'Nộp tiền thành công',
+        ));
+        // Automatically transition to loaded state
+        emit(AssetLoaded(assets: updatedAssets));
+      },
+    );
+  }
+
+  Future<void> _onAssetTransferRequested(
+    AssetTransferRequested event,
+    Emitter<AssetState> emit,
+  ) async {
+    final currentState = state;
+    final currentAssets = _getCurrentAssets(currentState);
+    
+    emit(AssetOperationLoading(
+      assets: currentAssets,
+      operation: 'Đang chuyển tiền giữa tài sản...',
+    ));
+
+    final result = await transferBetweenAssetsUsecase(
+      TransferBetweenAssetsParams(
+        fromAssetId: event.fromAssetId,
+        toAssetId: event.toAssetId,
+        amount: event.amount,
+        notes: event.notes,
+      ),
+    );
+
+    result.fold(
+      (failure) => emit(AssetError(message: failure.message)),
+      (transferResult) {
+        final fromAsset = transferResult['from']!;
+        final toAsset = transferResult['to']!;
+        
+        final updatedAssets = currentAssets.map((asset) {
+          if (asset.id == fromAsset.id) return fromAsset;
+          if (asset.id == toAsset.id) return toAsset;
+          return asset;
+        }).toList();
+        
+        emit(AssetOperationSuccess(
+          assets: updatedAssets,
+          message: 'Chuyển tiền thành công',
+        ));
+        // Automatically transition to loaded state
+        emit(AssetLoaded(assets: updatedAssets));
       },
     );
   }

@@ -6,6 +6,8 @@ import '../bloc/asset_bloc.dart';
 import '../bloc/asset_event.dart';
 import '../bloc/asset_state.dart';
 import '../widgets/asset_type_dropdown.dart';
+import '../widgets/deposit_dialog.dart';
+import '../widgets/transfer_dialog.dart';
 import '../../../auth/presentation/widgets/auth_text_field.dart';
 import '../../../auth/presentation/widgets/auth_button.dart';
 
@@ -35,6 +37,10 @@ class _EditAssetScreenState extends State<EditAssetScreen> {
       text: _formatCurrency(widget.asset.balance.toStringAsFixed(0)),
     );
     _selectedType = widget.asset.type;
+    
+    // Thêm listener để theo dõi thay đổi
+    _nameController.addListener(() => setState(() {}));
+    _balanceController.addListener(() => setState(() {}));
   }
 
   @override
@@ -111,9 +117,39 @@ class _EditAssetScreenState extends State<EditAssetScreen> {
       _balanceController.text.replaceAll(',', ''),
     ) ?? 0;
     
+    // So sánh với độ chính xác để tránh lỗi floating point
+    final balanceChanged = (currentBalance - widget.asset.balance).abs() > 0.01;
+    
     return _nameController.text.trim() != widget.asset.name ||
            _selectedType != widget.asset.type ||
-           currentBalance != widget.asset.balance;
+           balanceChanged;
+  }
+
+  void _showDepositDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => DepositDialog(asset: widget.asset),
+    );
+  }
+
+  void _showTransferDialog() {
+    final currentState = context.read<AssetBloc>().state;
+    if (currentState is AssetLoaded) {
+      showDialog(
+        context: context,
+        builder: (context) => TransferDialog(
+          fromAsset: widget.asset,
+          availableAssets: currentState.assets,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không thể tải danh sách tài sản'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -147,7 +183,20 @@ class _EditAssetScreenState extends State<EditAssetScreen> {
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.pop(context);
+            
+            // Nếu là thao tác nộp tiền, cập nhật lại form với số dư mới
+            if (state.message.contains('Nộp tiền thành công')) {
+              final updatedAsset = state.assets.firstWhere(
+                (asset) => asset.id == widget.asset.id,
+                orElse: () => widget.asset,
+              );
+              setState(() {
+                _balanceController.text = _formatCurrency(updatedAsset.balance.toStringAsFixed(0));
+              });
+            } else {
+              // Các thao tác khác thì đóng màn hình
+              Navigator.pop(context);
+            }
           }
         },
         child: SingleChildScrollView(
@@ -233,6 +282,38 @@ class _EditAssetScreenState extends State<EditAssetScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
+
+                // Action buttons row
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _showDepositDialog,
+                        icon: const Icon(Icons.add_circle_outline),
+                        label: const Text('Nộp tiền'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.green,
+                          side: const BorderSide(color: Colors.green),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _showTransferDialog,
+                        icon: const Icon(Icons.swap_horiz),
+                        label: const Text('Chuyển tiền'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.blue,
+                          side: const BorderSide(color: Colors.blue),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
                 // Submit Button
                 BlocBuilder<AssetBloc, AssetState>(

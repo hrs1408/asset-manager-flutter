@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
 import 'demo_app.dart';
@@ -12,6 +14,10 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize locale data for Vietnamese
+  await initializeDateFormatting('vi_VN', null);
+  Intl.defaultLocale = 'vi_VN';
   
   // Validate configuration
   AppConfig.validate();
